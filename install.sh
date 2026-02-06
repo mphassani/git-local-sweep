@@ -36,7 +36,7 @@ else
 fi
 
 # Download the script
-SCRIPT_URL="https://raw.githubusercontent.com/phassani/git-local-sweep/main/git-local-sweep"
+SCRIPT_URL="https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep"
 TEMP_FILE=$(mktemp)
 
 echo "Downloading git-local-sweep..."
@@ -57,15 +57,20 @@ chmod +x "$TEMP_FILE"
 # Move to installation directory
 if [ -w "$INSTALL_DIR" ]; then
     mv "$TEMP_FILE" "$INSTALL_DIR/git-local-sweep"
+    ln -sf "$INSTALL_DIR/git-local-sweep" "$INSTALL_DIR/gls"
 else
     echo "Installing to $INSTALL_DIR requires sudo privileges."
     sudo mv "$TEMP_FILE" "$INSTALL_DIR/git-local-sweep"
+    sudo ln -sf "$INSTALL_DIR/git-local-sweep" "$INSTALL_DIR/gls"
 fi
 
 echo -e "${GREEN}✓ Successfully installed git-local-sweep to $INSTALL_DIR${NC}"
+echo -e "${GREEN}✓ Alias installed: gls${NC}"
 echo ""
 echo "Usage:"
 echo "  git-local-sweep preview  - Preview branches to be deleted"
 echo "  git-local-sweep cleanup  - Delete branches (with confirmation)"
+echo "  gls preview              - Same as git-local-sweep preview"
+echo "  gls cleanup              - Same as git-local-sweep cleanup"
 echo ""
 echo "Try it now: cd into a git repository and run 'git-local-sweep preview'"
