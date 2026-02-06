@@ -14,7 +14,7 @@ import tempfile
 import shutil
 
 VERSION = "1.1.0"
-REPO_URL = "https://raw.githubusercontent.com/phassani/git-local-sweep/main/git-local-sweep"
+REPO_URL = "https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep"
 COMMAND_NAME = os.path.basename(sys.argv[0]) or "git-local-sweep"
 
 
@@ -162,7 +162,7 @@ def update():
     except Exception as e:
         print(f"Error during update: {e}")
         print("\nYou can manually update by running:")
-        print(f"  curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash")
+        print(f"  curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash")
 
 
 def main():

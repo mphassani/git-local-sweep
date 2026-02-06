@@ -17,20 +17,20 @@ The installer also adds a short alias: `gls`.
 ### Quick Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash
 ```
 
 Or using wget:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash
 ```
 
 ### Manual Installation
 
 1. Download the script:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/git-local-sweep -o git-local-sweep
+curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep -o git-local-sweep
 ```
 
 2. Make it executable:
@@ -70,7 +70,7 @@ This will check for the latest version and prompt you to install it.
 Re-run the installation script to get the latest version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash
 ```
 
 ## Usage
@@ -173,4 +173,4 @@ MIT License - see LICENSE file for details
 
 ## Author
 
-Created by Parsa Hassani ([@phassani](https://github.com/phassani))
+Created by Parsa Hassani ([@mphassani](https://github.com/mphassani))

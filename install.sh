@@ -36,7 +36,7 @@ else
 fi
 
 # Download the script
-SCRIPT_URL="https://raw.githubusercontent.com/phassani/git-local-sweep/main/git-local-sweep"
+SCRIPT_URL="https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep"
 TEMP_FILE=$(mktemp)
 
 echo "Downloading git-local-sweep..."
