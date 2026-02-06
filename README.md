@@ -10,6 +10,8 @@ After pull requests are merged and remote branches are deleted, your local repos
 
 `git-local-sweep` makes it easy to identify and delete these orphaned local branches.
 
+The installer also adds a short alias: `gls`.
+
 ## Installation
 
 ### Quick Install (Recommended)
@@ -39,12 +41,14 @@ chmod +x git-local-sweep
 3. Move it to a directory in your PATH:
 ```bash
 sudo mv git-local-sweep /usr/local/bin/
+sudo ln -sf /usr/local/bin/git-local-sweep /usr/local/bin/gls
 ```
 
 Or for user-only installation:
 ```bash
 mkdir -p ~/.local/bin
 mv git-local-sweep ~/.local/bin/
+ln -sf ~/.local/bin/git-local-sweep ~/.local/bin/gls
 # Add ~/.local/bin to your PATH if not already there
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
 ```
@@ -75,6 +79,8 @@ curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/insta
 
 ```bash
 git-local-sweep preview
+# or
+gls preview
 ```
 
 This shows you which local branches are marked as "gone" from remote without deleting anything.
@@ -83,6 +89,8 @@ This shows you which local branches are marked as "gone" from remote without del
 
 ```bash
 git-local-sweep cleanup
+# or
+gls cleanup
 ```
 
 This will show you the branches and prompt for confirmation before deleting them.
@@ -91,6 +99,8 @@ This will show you the branches and prompt for confirmation before deleting them
 
 ```bash
 git-local-sweep cleanup --force
+# or
+gls cleanup --force
 ```
 
 Deletes branches without prompting for confirmation. Use with caution!
@@ -99,6 +109,8 @@ Deletes branches without prompting for confirmation. Use with caution!
 
 ```bash
 git-local-sweep --version
+# or
+gls --version
 ```
 
 Shows the currently installed version.
@@ -107,6 +119,8 @@ Shows the currently installed version.
 
 ```bash
 git-local-sweep update
+# or
+gls update
 ```
 
 Checks for and installs the latest version. You'll be prompted before updating.
