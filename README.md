@@ -49,6 +49,26 @@ mv git-local-sweep ~/.local/bin/
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
 ```
 
+## Updating
+
+### Automatic Update
+
+Simply run:
+
+```bash
+git-local-sweep update
+```
+
+This will check for the latest version and prompt you to install it.
+
+### Manual Update
+
+Re-run the installation script to get the latest version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash
+```
+
 ## Usage
 
 ### Preview branches to be deleted
@@ -74,6 +94,22 @@ git-local-sweep cleanup --force
 ```
 
 Deletes branches without prompting for confirmation. Use with caution!
+
+### Check version
+
+```bash
+git-local-sweep --version
+```
+
+Shows the currently installed version.
+
+### Update to latest version
+
+```bash
+git-local-sweep update
+```
+
+Checks for and installs the latest version. You'll be prompted before updating.
 
 ## Example
 

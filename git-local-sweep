@@ -7,6 +7,14 @@ Similar to git-sweep but for local branches marked as 'gone'.
 import subprocess
 import sys
 import argparse
+import urllib.request
+import os
+import stat
+import tempfile
+import shutil
+
+VERSION = "1.0.0"
+REPO_URL = "https://raw.githubusercontent.com/phassani/git-local-sweep/main/git-local-sweep"
 
 
 def get_gone_branches():
@@ -83,23 +91,112 @@ def cleanup(force=False):
     print("\nAll done!")
 
 
+def check_for_updates():
+    """Check if a newer version is available."""
+    try:
+        with urllib.request.urlopen(REPO_URL) as response:
+            content = response.read().decode('utf-8')
+            # Extract version from downloaded content
+            for line in content.split('\n'):
+                if line.startswith('VERSION = '):
+                    remote_version = line.split('"')[1]
+                    return remote_version
+    except Exception as e:
+        print(f"Error checking for updates: {e}")
+        return None
+
+
+def update():
+    """Update git-local-sweep to the latest version."""
+    print(f"Current version: {VERSION}")
+    print("Checking for updates...")
+
+    remote_version = check_for_updates()
+    if not remote_version:
+        print("Could not check for updates. Please try again later.")
+        return
+
+    if remote_version == VERSION:
+        print("You're already running the latest version!")
+        return
+
+    print(f"New version available: {remote_version}")
+
+    try:
+        response = input("Update now? (y/n) ")
+        if response.lower() != 'y':
+            print("Update cancelled.")
+            return
+    except KeyboardInterrupt:
+        print("\nUpdate cancelled.")
+        return
+
+    # Download the new version
+    try:
+        print("Downloading update...")
+        with urllib.request.urlopen(REPO_URL) as response:
+            new_content = response.read()
+
+        # Get the path of the current script
+        script_path = os.path.realpath(__file__)
+
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as temp_file:
+            temp_file.write(new_content)
+            temp_path = temp_file.name
+
+        # Make the temp file executable
+        os.chmod(temp_path, os.stat(script_path).st_mode)
+
+        # Replace the current script with the new version
+        shutil.move(temp_path, script_path)
+
+        print(f"✓ Successfully updated to version {remote_version}!")
+        print("Run 'git-local-sweep --version' to verify.")
+
+    except PermissionError:
+        print("\nPermission denied. Try running with sudo:")
+        print(f"  curl -fsSL {REPO_URL} | sudo tee {script_path} > /dev/null")
+        print(f"  sudo chmod +x {script_path}")
+    except Exception as e:
+        print(f"Error during update: {e}")
+        print("\nYou can manually update by running:")
+        print(f"  curl -fsSL https://raw.githubusercontent.com/phassani/git-local-sweep/main/install.sh | bash")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Clean up local branches that no longer exist on remote"
     )
     parser.add_argument(
         "command",
-        choices=["preview", "cleanup"],
-        help="preview: show branches to delete, cleanup: delete them"
+        nargs='?',
+        choices=["preview", "cleanup", "update"],
+        help="preview: show branches to delete, cleanup: delete them, update: update to latest version"
     )
     parser.add_argument(
         "--force",
         action="store_true",
         help="Skip confirmation prompt in cleanup"
     )
-    
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"git-local-sweep {VERSION}"
+    )
+
     args = parser.parse_args()
-    
+
+    # Handle update command (doesn't require git repo)
+    if args.command == "update":
+        update()
+        return
+
+    # Show help if no command provided
+    if not args.command:
+        parser.print_help()
+        return
+
     # Check if we're in a git repository
     result = subprocess.run(
         ["git", "rev-parse", "--git-dir"],
@@ -108,7 +205,7 @@ def main():
     if result.returncode != 0:
         print("Error: Not a git repository")
         sys.exit(1)
-    
+
     if args.command == "preview":
         preview()
     elif args.command == "cleanup":
