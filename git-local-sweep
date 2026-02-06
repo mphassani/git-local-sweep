@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""
+Git Local Sweep - Clean up local branches that no longer exist on remote.
+Similar to git-sweep but for local branches marked as 'gone'.
+"""
+
+import subprocess
+import sys
+import argparse
+
+
+def get_gone_branches():
+    """Get list of local branches that are gone from remote."""
+    result = subprocess.run(
+        ["git", "branch", "-vv"],
+        capture_output=True,
+        text=True
+    )
+    
+    if result.returncode != 0:
+        print(f"Error running git branch: {result.stderr}")
+        sys.exit(1)
+    
+    branches = []
+    for line in result.stdout.splitlines():
+        # Lines with ': gone]' indicate branches no longer on remote
+        if ': gone]' in line:
+            # Extract branch name (first word, strip leading * if present)
+            branch = line.split()[0].lstrip('*')
+            branches.append(branch)
+    
+    return branches
+
+
+def preview():
+    """Preview branches that would be deleted."""
+    branches = get_gone_branches()
+    
+    if not branches:
+        print("No local branches are available for cleaning up")
+        return
+    
+    print("These local branches are gone from remote:")
+    for branch in branches:
+        print(f"  {branch}")
+    print("\nTo delete them, run again with `git-local-sweep cleanup`")
+
+
+def cleanup(force=False):
+    """Delete local branches that are gone from remote."""
+    branches = get_gone_branches()
+    
+    if not branches:
+        print("No local branches are available for cleaning up")
+        return
+    
+    print("These local branches are gone from remote:")
+    for branch in branches:
+        print(f"  {branch}")
+    
+    if not force:
+        try:
+            response = input("\nDelete these branches? (y/n) ")
+            if response.lower() != 'y':
+                print("Aborted.")
+                return
+        except KeyboardInterrupt:
+            print("\nAborted.")
+            return
+    
+    print()
+    for branch in branches:
+        result = subprocess.run(
+            ["git", "branch", "-D", branch],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print(f"deleting {branch} (done)")
+        else:
+            print(f"deleting {branch} (failed: {result.stderr.strip()})")
+    
+    print("\nAll done!")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Clean up local branches that no longer exist on remote"
+    )
+    parser.add_argument(
+        "command",
+        choices=["preview", "cleanup"],
+        help="preview: show branches to delete, cleanup: delete them"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip confirmation prompt in cleanup"
+    )
+    
+    args = parser.parse_args()
+    
+    # Check if we're in a git repository
+    result = subprocess.run(
+        ["git", "rev-parse", "--git-dir"],
+        capture_output=True
+    )
+    if result.returncode != 0:
+        print("Error: Not a git repository")
+        sys.exit(1)
+    
+    if args.command == "preview":
+        preview()
+    elif args.command == "cleanup":
+        cleanup(force=args.force)
+
+
+if __name__ == "__main__":
+    main()
