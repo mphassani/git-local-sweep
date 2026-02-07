@@ -51,39 +51,25 @@ jobs:
             )"
           fi
 
-          should_release="$(
-            CURRENT_VERSION="$current_version" PREVIOUS_VERSION="$previous_version" python3 - <<'PY'
-import os
-import re
-import sys
+          if [ -z "$previous_version" ]; then
+            should_release="true"
+          else
+            if ! echo "$current_version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "Invalid current version: $current_version"
+              exit 1
+            fi
+            if ! echo "$previous_version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "Invalid previous version: $previous_version"
+              exit 1
+            fi
 
-current_version = os.environ["CURRENT_VERSION"].strip()
-previous_version = os.environ.get("PREVIOUS_VERSION", "").strip()
-
-def parse_semver(version):
-    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
-        raise ValueError(version)
-    return tuple(int(part) for part in version.split("."))
-
-try:
-    current = parse_semver(current_version)
-except ValueError:
-    print(f"Invalid current version: {current_version}", file=sys.stderr)
-    sys.exit(1)
-
-if not previous_version:
-    print("true")
-    sys.exit(0)
-
-try:
-    previous = parse_semver(previous_version)
-except ValueError:
-    print(f"Invalid previous version: {previous_version}", file=sys.stderr)
-    sys.exit(1)
-
-print("true" if current > previous else "false")
-PY
-          )"
+            highest_version="$(printf '%s\n%s\n' "$previous_version" "$current_version" | sort -V | tail -n 1)"
+            if [ "$highest_version" = "$current_version" ] && [ "$current_version" != "$previous_version" ]; then
+              should_release="true"
+            else
+              should_release="false"
+            fi
+          fi
 
           echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
           echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
