@@ -13,9 +13,48 @@ import stat
 import tempfile
 import shutil
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 REPO_URL = "https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep"
 COMMAND_NAME = os.path.basename(sys.argv[0]) or "git-local-sweep"
+NPM_PACKAGE_NAME = "@cryterion/git-local-sweep"
+NPM_UPDATE_COMMAND = f"npm install -g {NPM_PACKAGE_NAME}@latest"
+
+
+def is_npm_package_path(path):
+    """Return True when path includes node_modules/@cryterion/git-local-sweep."""
+    normalized = os.path.normpath(path)
+    parts = normalized.split(os.sep)
+
+    try:
+        node_modules_idx = parts.index("node_modules")
+    except ValueError:
+        return False
+
+    package_parts = parts[node_modules_idx + 1:node_modules_idx + 3]
+    return package_parts == ["@cryterion", "git-local-sweep"]
+
+
+def is_npm_managed_install(script_path, argv_path):
+    """Return True if script was launched from an npm-managed install."""
+    if is_npm_package_path(script_path):
+        return True
+
+    argv_full_path = os.path.abspath(argv_path)
+    if is_npm_package_path(argv_full_path):
+        return True
+
+    # `npm install -g .` may create a symlink chain where `realpath(__file__)`
+    # points to the local workspace file. Inspect first-hop symlink target too.
+    if os.path.islink(argv_full_path):
+        target = os.readlink(argv_full_path)
+        if not os.path.isabs(target):
+            target = os.path.normpath(
+                os.path.join(os.path.dirname(argv_full_path), target)
+            )
+        if is_npm_package_path(target):
+            return True
+
+    return False
 
 
 def get_gone_branches():
@@ -109,6 +148,25 @@ def check_for_updates():
 
 def update():
     """Update git-local-sweep to the latest version."""
+    script_path = os.path.realpath(__file__)
+
+    # npm installs place binaries under node_modules. For that case, delegate
+    # updates to npm instead of self-overwriting the script file.
+    if is_npm_managed_install(script_path, sys.argv[0]):
+        print("This installation is managed by npm.")
+        print(f"Run this command to update: {NPM_UPDATE_COMMAND}")
+        try:
+            response = input("Run it now? (y/n) ")
+            if response.lower() == "y":
+                result = subprocess.run(NPM_UPDATE_COMMAND.split())
+                if result.returncode != 0:
+                    print("npm update command failed. Please run it manually.")
+                return
+            print("Update cancelled.")
+        except KeyboardInterrupt:
+            print("\nUpdate cancelled.")
+        return
+
     print(f"Current version: {VERSION}")
     print("Checking for updates...")
 
@@ -137,9 +195,6 @@ def update():
         print("Downloading update...")
         with urllib.request.urlopen(REPO_URL) as response:
             new_content = response.read()
-
-        # Get the path of the current script
-        script_path = os.path.realpath(__file__)
 
         # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='wb', delete=False) as temp_file:
