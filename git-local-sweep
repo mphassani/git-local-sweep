@@ -13,7 +13,7 @@ import stat
 import tempfile
 import shutil
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 REPO_URL = "https://raw.githubusercontent.com/mphassani/git-local-sweep/main/git-local-sweep"
 COMMAND_NAME = os.path.basename(sys.argv[0]) or "git-local-sweep"
 NPM_PACKAGE_NAME = "@cryterion/git-local-sweep"
