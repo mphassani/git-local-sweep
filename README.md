@@ -10,11 +10,21 @@ After pull requests are merged and remote branches are deleted, your local repos
 
 `git-local-sweep` makes it easy to identify and delete these orphaned local branches.
 
-The installer also adds a short alias: `gls`.
+The package exposes a short alias: `gls`.
 
 ## Installation
 
-### Quick Install (Recommended)
+### npm Global Install (Recommended)
+
+```bash
+npm install -g @cryterion/git-local-sweep
+```
+
+This installs both commands:
+- `git-local-sweep`
+- `gls`
+
+### Shell Installer (Alternative)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash
@@ -55,19 +65,25 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
 
 ## Updating
 
-### Automatic Update
+### npm Installation
 
-Simply run:
+If installed via npm, update with:
+
+```bash
+npm install -g @cryterion/git-local-sweep@latest
+```
+
+If you run `git-local-sweep update` (or `gls update`) from an npm-managed install, the command guides you to the npm update flow.
+
+### Shell/Manual Installation
+
+If installed via `install.sh` or manual copy, run:
 
 ```bash
 git-local-sweep update
 ```
 
-This will check for the latest version and prompt you to install it.
-
-### Manual Update
-
-Re-run the installation script to get the latest version:
+Or re-run the installer:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mphassani/git-local-sweep/main/install.sh | bash
@@ -123,7 +139,8 @@ git-local-sweep update
 gls update
 ```
 
-Checks for and installs the latest version. You'll be prompted before updating.
+For npm-managed installs, this recommends the npm global update command.
+For shell/manual installs, this checks for and applies script updates.
 
 ## Example
 
@@ -155,6 +172,44 @@ All done!
 
 - Python 3.6 or higher
 - Git
+- npm (only required for npm install/update/release flows)
+
+## Release Process
+
+### Version bump workflow
+
+Use Bun scripts to keep `package.json` and the CLI script version in sync:
+
+```bash
+bun run check:version-sync
+bun run version:patch
+# or: bun run version:minor
+# or: bun run version:major
+```
+
+After bumping, commit and merge to `main`. The release workflow then:
+1. Confirms version sync
+2. Checks whether version increased from the previous `main` commit
+3. Creates GitHub Release `vX.Y.Z` if missing
+4. Publishes `@cryterion/git-local-sweep@X.Y.Z` to npm if not already published
+
+### One-time setup for automated npm publish
+
+1. Configure npm Trusted Publishing (OIDC) for this repository:
+   - npm package: `@cryterion/git-local-sweep`
+   - GitHub repo: `mphassani/git-local-sweep`
+   - Workflow file: `.github/workflows/release.yml`
+2. Ensure the `@cryterion` npm scope allows public packages.
+
+### First manual npm publish bootstrap
+
+Run once from the repository root (after version sync check):
+
+```bash
+npm publish --access public
+```
+
+The release workflow is idempotent, so if this version is already on npm it will skip publishing and continue safely.
 
 ## How it works
 
@@ -169,7 +224,7 @@ Contributions are welcome! Feel free to submit issues or pull requests.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see LICENSE file for details.
 
 ## Author
 

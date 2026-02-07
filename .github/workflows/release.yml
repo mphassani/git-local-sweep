@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Validate version sync
+        run: bun run check:version-sync
+
+      - name: Decide whether to release
+        id: release_gate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          current_version="$(node -p "require('./package.json').version")"
+          previous_version=""
+
+          if git rev-parse HEAD^ >/dev/null 2>&1 && git cat-file -e HEAD^:package.json 2>/dev/null; then
+            previous_version="$(
+              git show HEAD^:package.json | node -p "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync(0, 'utf8')); pkg.version"
+            )"
+          fi
+
+          should_release="$(
+            CURRENT_VERSION="$current_version" PREVIOUS_VERSION="$previous_version" python3 - <<'PY'
+import os
+import re
+import sys
+
+current_version = os.environ["CURRENT_VERSION"].strip()
+previous_version = os.environ.get("PREVIOUS_VERSION", "").strip()
+
+def parse_semver(version):
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError(version)
+    return tuple(int(part) for part in version.split("."))
+
+try:
+    current = parse_semver(current_version)
+except ValueError:
+    print(f"Invalid current version: {current_version}", file=sys.stderr)
+    sys.exit(1)
+
+if not previous_version:
+    print("true")
+    sys.exit(0)
+
+try:
+    previous = parse_semver(previous_version)
+except ValueError:
+    print(f"Invalid previous version: {previous_version}", file=sys.stderr)
+    sys.exit(1)
+
+print("true" if current > previous else "false")
+PY
+          )"
+
+          echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
+          echo "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
+          echo "should_release=$should_release" >> "$GITHUB_OUTPUT"
+
+          if [ "$should_release" = "true" ]; then
+            echo "Version increased from '${previous_version:-<none>}' to '$current_version'."
+          else
+            echo "Version did not increase (previous='${previous_version:-<none>}', current='$current_version')."
+          fi
+
+      - name: Ensure GitHub release exists
+        if: steps.release_gate.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.release_gate.outputs.current_version }}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "GitHub release $tag already exists."
+          else
+            gh release create "$tag" \
+              --target "$GITHUB_SHA" \
+              --title "$tag" \
+              --generate-notes
+          fi
+
+      - name: Publish to npm
+        if: steps.release_gate.outputs.should_release == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_name="@cryterion/git-local-sweep"
+          version="${{ steps.release_gate.outputs.current_version }}"
+
+          if npm view "${package_name}@${version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${version} already exists on npm."
+            exit 0
+          fi
+
+          set +e
+          publish_output="$(npm publish --access public --provenance 2>&1)"
+          publish_status=$?
+          set -e
+          echo "$publish_output"
+
+          if [ "$publish_status" -eq 0 ]; then
+            echo "Published ${package_name}@${version} to npm."
+            exit 0
+          fi
+
+          if echo "$publish_output" | grep -q "cannot publish over the previously published versions"; then
+            echo "${package_name}@${version} was already published. Continuing."
+            exit 0
+          fi
+
+          echo "npm publish failed unexpectedly."
+          exit "$publish_status"
