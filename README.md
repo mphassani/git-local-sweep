@@ -100,6 +100,7 @@ gls preview
 ```
 
 This shows you which local branches are marked as "gone" from remote without deleting anything.
+Before listing branches, the tool refreshes remote tracking data with a `git fetch --all --prune` check.
 
 ### Clean up branches
 
@@ -110,6 +111,7 @@ gls cleanup
 ```
 
 This will show you the branches and prompt for confirmation before deleting them.
+At the prompt, `y` or just pressing Enter confirms deletion.
 
 ### Clean up without confirmation
 
@@ -159,7 +161,7 @@ These local branches are gone from remote:
   bugfix/fixed-bug
   experiment/test-idea
 
-Delete these branches? (y/n) y
+Delete these branches? ([Y]/n)
 
 deleting feature/old-feature (done)
 deleting bugfix/fixed-bug (done)
